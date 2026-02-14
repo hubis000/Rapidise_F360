@@ -61,33 +61,31 @@ def save_threshold(threshold):
     with open("settings.json", "w") as file:
         json.dump(data, file)
 
-# Function to open and select a file using tkinter file dialog
+# Function to open and select one or more files using tkinter file dialog
 def open_file():
     root = tk.Tk()
     root.withdraw()  # Hide the root window
-    file_path = filedialog.askopenfilename(title="Select a file to process", filetypes=(("Text Files", "*.tap"), ("All Files", "*.*")))
+    file_paths = filedialog.askopenfilenames(title="Select files to process", filetypes=(("All Files", "*.*")))
 
-    if file_path:
-        with open(file_path, 'r') as file:
-            content = file.read()
-
-        # Process the content with the current threshold
+    if file_paths:
         threshold_value = float(threshold_entry.get()) if threshold_entry.get() else DEFAULT_THRESHOLD
-        processed_content = process_file(content, threshold_value)
-        
-        # Save the processed content to a new file
-        save_file(processed_content)
+        for file_path in file_paths:
+            with open(file_path, 'r') as file:
+                content = file.read()
 
-# Function to save the processed content to a new file
-def save_file(content):
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
-    save_path = filedialog.asksaveasfilename(title="Save processed file", defaultextension=".tap", filetypes=(("Text Files", "*.tap"), ("All Files", "*.*")))
+            processed_content = process_file(content, threshold_value)
+            save_processed_file(file_path, processed_content)
 
-    if save_path:
-        with open(save_path, 'w') as file:
-            file.write(content)
-        print(f"Processed file saved to: {save_path}")
+# Function to save processed content next to original file with "_rapid.nc" appendix
+def save_processed_file(original_path, content):
+    dirpath = os.path.dirname(original_path)
+    base = os.path.splitext(os.path.basename(original_path))[0]
+    save_name = f"{base}_rapid.nc"
+    save_path = os.path.join(dirpath, save_name)
+
+    with open(save_path, 'w') as file:
+        file.write(content)
+    print(f"Processed file saved to: {save_path}")
 
 # GUI setup
 def setup_gui():
@@ -108,8 +106,8 @@ def setup_gui():
     threshold_entry.insert(0, str(current_threshold))  # Set the current threshold value in the input box
     threshold_entry.pack(pady=20)
 
-    # Create and place the "Open File" button
-    open_button = tk.Button(root, text="Open File", command=open_file)
+    # Create and place the "Open File(s)" button
+    open_button = tk.Button(root, text="Open File(s)", command=open_file)
     open_button.pack(pady=10)
 
     # Create and place the "Save Threshold" button
